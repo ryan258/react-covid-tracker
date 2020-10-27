@@ -7,6 +7,15 @@ import Map from './Map';
 function App() {
   const [countries, setCountries] = useState([]);
   const [country, setCountry] = useState('worldwide');
+  const [countryInfo, setCountryInfo] = useState({});
+
+  useEffect(() => {
+    fetch("https://disease.sh/v3/covid-19/all")
+      .then(response => response.json())
+      .then(data => {
+        setCountryInfo(data)
+      })
+  }, [])
 
   useEffect(() => {
     const getCountriesData = async () => {
@@ -26,10 +35,29 @@ function App() {
     getCountriesData()
   }, [])
 
-  const onCountryChange = (event) => {
+  const onCountryChange = async (event) => {
     const countryCode = event.target.value
     setCountry(countryCode)
-  }
+
+    // Pull Info for selected country OR Worldwide
+    // https://disease.sh/v3/covid-19/countries/[COUNTRY_CODE]
+    // OR Worldwide
+    // https://disease.sh/v3/covid-19/all
+    const url = countryCode === 'worldwide' 
+              ? 'https://disease.sh/v3/covid-19/all' 
+              : `https://disease.sh/v3/covid-19/countries/${countryCode}`
+    // now make the api call, get data, and do something with it
+    await fetch(url)
+          .then(response => response.json())
+          .then(data => {
+            // update the input code
+            setCountry(countryCode)
+            // store response of country info into a "variable"
+            setCountryInfo(data);
+          })
+        }
+
+    console.log('Country info > ', countryInfo)
 
   return (
     <div className="app">
@@ -53,11 +81,11 @@ function App() {
         </div>
         <div className="app__stats">
           {/* InfoBox title="Corona Virus Cases"*/}
-          <InfoBox title="Coronavirus Cases" cases={123} total={2000} />
+          <InfoBox title="Coronavirus Cases" cases={countryInfo.todayCases} total={countryInfo.cases} />
           {/* InfoBox title="Corona Virus Recoveries"*/}
-          <InfoBox title="Recovered" cases={1234} total={3000} />
+          <InfoBox title="Recovered" cases={countryInfo.todayRecovered} total={countryInfo.recovered} />
           {/* InfoBox title="Corona Virus Deaths"*/}
-          <InfoBox title="Deaths" cases={12345} total={4000} />
+          <InfoBox title="Deaths" cases={countryInfo.todayDeaths} total={countryInfo.deaths} />
         </div>
         {/* Map */}
         <Map />
